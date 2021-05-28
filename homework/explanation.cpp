@@ -16,15 +16,20 @@ int main(int argc, char** argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   const int N = 256;
+  #vector 可変長配列
   vector<float> A(N*N);
   vector<float> B(N*N);
   vector<float> C(N*N, 0);
   vector<float> subA(N*N/size);
   vector<float> subB(N*N/size);
   vector<float> subC(N*N/size, 0);
+  #n*n行列作成
   for (int i=0; i<N; i++) {
     for (int j=0; j<N; j++) {
+      #drand48:区間 [0.0, 1.0) で 一様分布する非負の倍精度浮動小数点実数値
+      #A_ij
       A[N*i+j] = drand48();
+      #B_ij
       B[N*i+j] = drand48();
     }
   }
