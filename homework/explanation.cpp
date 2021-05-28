@@ -6,9 +6,13 @@
 using namespace std;
 
 int main(int argc, char** argv) {
+  #size:プロセス数, rank:プロセス番号
   int size, rank;
+  #MPI communicatorの初期化
   MPI_Init(&argc, &argv);
+  #プロセス数取得
   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  #プロセス番号取得
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   const int N = 256;
