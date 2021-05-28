@@ -4,6 +4,7 @@ test:original
 <br>
 mpi:add OpenMP
 <br>
+for compile
 > module load intel-mpi  
 > mpicxx 00_hello.cpp  
 > mpirun -np 4 ./a.out
