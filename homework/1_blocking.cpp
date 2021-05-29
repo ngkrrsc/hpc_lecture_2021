@@ -7,8 +7,9 @@ using namespace std;
 
 #include <cstdlib>
 #include <immintrin.h>
-typedef vector<vector<float>> matrix;
+/*typedef vector<vector<float>> matrix;*/
 
+/*
 void matmult(matrix &A, matrix &B, matrix &C, int N) {
   const int m = N, n = N, k = N;
   const int kc = 512;
@@ -55,6 +56,7 @@ void matmult(matrix &A, matrix &B, matrix &C, int N) {
     }
   }
 }
+*/
 
 int main(int argc, char** argv) {
   /*size:プロセス数, rank:プロセス番号*/
@@ -98,17 +100,67 @@ int main(int argc, char** argv) {
   /*前のrankに送る*/
   int send_to = (rank - 1 + size) % size;
 
+  /*パラメータ設定*/
+  const int m = N/size, n = N, k = N/size;
+  const int kc = 64;
+  const int nc = N/size/4;
+  const int mc = 32;
+  const int nr = 32;
+  const int mr = 16;
+
   double comp_time = 0, comm_time = 0;
   for(int irank=0; irank<size; irank++) {
     /*計測開始*/
     auto tic = chrono::steady_clock::now();
     offset = N/size*((rank+irank) % size);
     /*subA*subBをsubCに格納*/
-    /*openmpで並列化したい、細分化してキャッシュブロッキング*/
+    /*openmpで並列化したい、キャッシュブロッキング*/
+    /*subB*subAを計算*/
+#pragma omp parallel for collapse(2)
+  for (int jc=0; jc<n; jc+=nc) {
+    for (int pc=0; pc<k; pc+=kc) {
+      float Bc[kc*nc];
+      for (int p=0; p<kc; p++) {
+        for (int j=0; j<nc; j++) {
+          Bc[p*nc+j] = subB[(p+pc)*N+j+jc];
+        }
+      }
+      for (int ic=0; ic<m; ic+=mc) {
+	float Ac[mc*kc],Cc[mc*nc];
+        for (int i=0; i<mc; i++) {
+          for (int p=0; p<kc; p++) {
+            Ac[i*kc+p] = subA[(i+ic)*N+p+pc];
+          }
+          for (int j=0; j<nc; j++) {
+            Cc[i*nc+j] = 0;
+          }
+        }
+        for (int jr=0; jr<nc; jr+=nr) {
+          for (int ir=0; ir<mc; ir+=mr) {
+            for (int kr=0; kr<kc; kr++) {
+              for (int i=ir; i<ir+mr; i++) {
+                for (int j=jr; j<jr+nr; j++) { 
+                  Cc[i*nc+j] += Ac[i*kc+kr] * Bc[kr*nc+j];
+                }
+              }
+            }
+          }
+        }
+        for (int i=0; i<mc; i++) {
+          for (int j=0; j<nc; j++) {
+            subC[(i+ic)*N+j+jc+offset] += Cc[i*nc+j];
+          }
+        }
+      }
+    }
+  }	  
+	/*  
     for (int i=0; i<N/size; i++)
       for (int j=0; j<N/size; j++)
         for (int k=0; k<N; k++)
           subC[N*i+j+offset] += subA[N*i+k] * subB[N/size*k+j];
+	  */
+	  
     /*計算時間加算*/
     auto toc = chrono::steady_clock::now();
     comp_time += chrono::duration<double>(toc - tic).count();
