@@ -92,7 +92,19 @@ int main(int argc, char** argv) {
     }
   } 
     
-    
+	  /*debug*/
+  for (int i=0; i<N/size; i++)
+    for (int j=0; j<N/size; j++)
+      for (int k=0; k<N; k++)
+        subC[N*i+j+offset] -= subA[N*i+k] * subB[N*k+j];
+	  
+  double err = 0;
+  for (int i=0; i<N; i++)
+    for (int j=0; j<N; j++)
+      err += fabs(C[N*i+j]);
+	  
+  printf("error: %lf\n",err/N/N);
+	  
     /*
     for (int i=0; i<N/size; i++)
       for (int j=0; j<N/size; j++)
