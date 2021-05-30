@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
     auto tic = chrono::steady_clock::now();
     offset = N/size*((rank+irank) % size);
     
-  /*subB*subAを計算*/
+  /*subA*subBを計算*/
 #pragma omp parallel for collapse(2)
   for (int jc=0; jc<n; jc+=nc) {
     for (int pc=0; pc<k; pc+=kc) {
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
 	float Ac[mc*kc],Cc[mc*nc];
         for (int i=0; i<mc; i++) {
           for (int p=0; p<kc; p++) {
-            Ac[i*kc+p] = A[(i+ic)*N/size+p+pc];
+            Ac[i*kc+p] = subA[(i+ic)*N+p+pc];
           }
           for (int j=0; j<nc; j++) {
             Cc[i*nc+j] = 0;
