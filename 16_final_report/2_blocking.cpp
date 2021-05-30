@@ -96,7 +96,7 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M,
         }
 		for (int i=0; i<mc; i++) { 
 		  for (int j=0; j<nc; j++) {
-            C[N1*(i+ic)+j+jc+offset] += Cc[i*nc+j];
+            C[N*(i+ic)+j+jc+offset] += Cc[i*nc+j];
           }
         }
       }
