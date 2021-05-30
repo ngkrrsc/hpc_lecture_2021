@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  const int N = 256;
+  const int N = 512;
   vector<float> A(N*N);
   vector<float> B(N*N);
   vector<float> C(N*N, 0);
@@ -38,18 +38,18 @@ int main(int argc, char** argv) {
       subB[N/size*i+j] = B[N*i+j+offset];
   int recv_from = (rank + 1) % size;
   int send_to = (rank - 1 + size) % size;
+	
+/*パラメータ設定*/
+  const int m = N/size, n = N, k = N/size;
+  const int kc = 256;
+  const int nc = 32;
+  const int mc = 128;
+  const int nr = 32;
+  const int mr = 16;
 
   double comp_time = 0, comm_time = 0;
   for(int irank=0; irank<size; irank++) {
-    
-   /*パラメータ設定*/
-    const int m = N/size, n = N, k = N/size;
-    const int kc = 512;
-    const int nc = 64;
-    const int mc = 256;
-    const int nr = 64;
-    const int mr = 32;
-    
+	  
     auto tic = chrono::steady_clock::now();
     offset = N/size*((rank+irank) % size);
     
@@ -59,14 +59,14 @@ int main(int argc, char** argv) {
         float Bc[kc*nc];
         for (int p=0; p<kc; p++) {
           for (int j=0; j<nc; j++) {
-            Bc[p*nc+j] = B[(p+pc)*N/size+j+jc];
+            Bc[p*nc+j] = B[(N/size)*(p+pc)+j+jc];
           }
         }
         for (int ic=0; ic<m; ic+=mc) {
 	        float Ac[mc*kc],Cc[mc*nc];
           for (int i=0; i<mc; i++) {
             for (int p=0; p<kc; p++) {
-              Ac[i*kc+p] = A[(i+ic)*N+p+pc];
+              Ac[i*kc+p] = A[N*(i+ic)+p+pc];
             }
             for (int j=0; j<nc; j++) {
               Cc[i*nc+j] = 0;
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
             for (int ir=0; ir<mc; ir+=mr) {
               for (int kr=0; kr<kc; kr++) {
                 for (int i=ir; i<ir+mr; i++) {
-		              __m256 Avec = _mm256_broadcast_ss(Ac+i*kc+kr);
+		  __m256 Avec = _mm256_broadcast_ss(Ac+i*kc+kr);
                   for (int j=jr; j<jr+nr; j+=8) {
                     __m256 Bvec = _mm256_load_ps(Bc+kr*nc+j);
                     __m256 Cvec = _mm256_load_ps(Cc+i*nc+j);
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
           }
           for (int i=0; i<mc; i++) {
             for (int j=0; j<nc; j++) {
-              subC[(i+ic)*N+j+jc] += Cc[i*nc+j];
+              subC[(i+ic)*N+j+jc+offset] += Cc[i*nc+j];
             }
           }
         }
