@@ -17,8 +17,8 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M,
   const int nr = 64;
   const int mr = 32;
 #pragma omp parallel for collapse(2)
-  for (int pc=0; pc<k; pc+=kc) {
-    for (int jc=0; jc<n; jc+=nc) {
+  for (int jc=0; jc<n; jc+=nc) {
+    for (int pc=0; pc<k; pc+=kc) {
       float Bc[kc*nc];
       for (int p=0; p<kc; p++) {
         for (int j=0; j<nc; j++) {
@@ -36,9 +36,9 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M,
           }
         }
         for (int jr=0; jr<nc; jr+=nr) {
-          for (int ir=0; ir<mc; ir+=mr) {
-            for (int i=ir; i<ir+mr; i++) {       
-              for (int kr=0; kr<kc; kr++) {
+          for (int ir=0; ir<mc; ir+=mr) {    
+            for (int kr=0; kr<kc; kr++) {
+	      for (int i=ir; i<ir+mr; i++) { 
                 for (int j=jr; j<jr+nr; j++) { 
                   Cc[i*nc+j] += Ac[i*kc+kr] * Bc[kr*nc+j];
                 }
