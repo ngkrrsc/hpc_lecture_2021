@@ -5,12 +5,13 @@ example.cpp:オリジナル
 <br>
 0_omp.cpp:ループの入れ替え, openmp化, 行列積を関数化
 <br>
-1_blocking.cpp:キャッシュブロッキング(誤差が出てしまう)
+1_blocking.cpp:キャッシュブロッキング
 <br>
-2_simd:キャッシュブロッキング+simd(誤差が出てしまう)
+2_simd:キャッシュブロッキング+simd
 <br>
 <br>
 compile 
+> qrsh -g tga-hpc-lecture -l s_gpu=1 -l h_rt=0:20:00  
 > module load gcc  
 > module load intel-mpi  
 > mpicxx example.cpp -fopenmp -march=native -O3  
