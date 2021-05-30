@@ -13,5 +13,5 @@ example.cpp:オリジナル
 compile 
 > module load gcc  
 > module load intel-mpi  
-> mpicxx example.cpp -fopenmp -march=native -O3　 
+> mpicxx example.cpp -fopenmp -march=native -O3  
 > mpirun -np 4 ./a.out
