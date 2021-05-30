@@ -5,9 +5,9 @@ example.cpp:オリジナル
 <br>
 0_omp.cpp:ループの入れ替え, openmp化, 行列積を関数化
 <br>
-1_blocking.cpp:キャッシュブロッキング
+1_blocking.cpp:キャッシュブロッキング(誤差が出てしまう)
 <br>
-2_simd:キャッシュブロッキング+simd
+2_simd:キャッシュブロッキング+simd(誤差が出てしまう)
 <br>
 <br>
 compile 
