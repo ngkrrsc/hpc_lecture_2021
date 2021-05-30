@@ -2,7 +2,7 @@ final homework of hpc 2021
 <br>
 test:original
 <br>
-mpi:add OpenMP
+1_blocking.cpp:add cache blocking
 <br>
 <br>
 compile 
