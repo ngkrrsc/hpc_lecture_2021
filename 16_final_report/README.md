@@ -11,7 +11,7 @@ example.cpp:オリジナル
 <br>
 <br>
 compile 
-> qrsh -g tga-hpc-lecture -l s_gpu=1 -l h_rt=0:20:00  
+> qrsh -g tga-hpc-lecture -l s_gpu=8 -l h_rt=0:20:00  
 > module load gcc  
 > module load intel-mpi  
 > mpicxx example.cpp -fopenmp -march=native -O3  
