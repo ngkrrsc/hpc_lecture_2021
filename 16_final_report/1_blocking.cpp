@@ -54,43 +54,43 @@ int main(int argc, char** argv) {
     
   /*subB*subAを計算*/
 #pragma omp parallel for collapse(2)
-  for (int jc=0; jc<n; jc+=nc) {
-    for (int pc=0; pc<k; pc+=kc) {
-      float Bc[kc*nc];
-      for (int p=0; p<kc; p++) {
-        for (int j=0; j<nc; j++) {
-          Bc[p*nc+j] = subB[(p+pc)*N/size+j+jc];
-        }
-      }
-      for (int ic=0; ic<m; ic+=mc) {
-	float Ac[mc*kc],Cc[mc*nc];
-        for (int i=0; i<mc; i++) {
-          for (int p=0; p<kc; p++) {
-            Ac[i*kc+p] = subA[(i+ic)*N+p+pc];
-          }
+    for (int jc=0; jc<n; jc+=nc) {
+      for (int pc=0; pc<k; pc+=kc) {
+        float Bc[kc*nc];
+        for (int p=0; p<kc; p++) {
           for (int j=0; j<nc; j++) {
-            Cc[i*nc+j] = 0;
+            Bc[p*nc+j] = subB[(p+pc)*N/size+j+jc];
           }
         }
-        for (int jr=0; jr<nc; jr+=nr) {
-          for (int ir=0; ir<mc; ir+=mr) {
-            for (int kr=0; kr<kc; kr++) {
-              for (int i=ir; i<ir+mr; i++) {
-                for (int j=jr; j<jr+nr; j++) { 
-                  Cc[i*nc+j] += Ac[i*kc+kr] * Bc[kr*nc+j];
+        for (int ic=0; ic<m; ic+=mc) {
+      	  float Ac[mc*kc],Cc[mc*nc];
+          for (int i=0; i<mc; i++) {
+            for (int p=0; p<kc; p++) {
+              Ac[i*kc+p] = subA[(i+ic)*N+p+pc];
+            }
+            for (int j=0; j<nc; j++) {
+              Cc[i*nc+j] = 0;
+            }
+          }
+          for (int jr=0; jr<nc; jr+=nr) {
+            for (int ir=0; ir<mc; ir+=mr) {
+              for (int kr=0; kr<kc; kr++) {
+                for (int i=ir; i<ir+mr; i++) {
+                  for (int j=jr; j<jr+nr; j++) { 
+                    Cc[i*nc+j] += Ac[i*kc+kr] * Bc[kr*nc+j];
+                  }
                 }
               }
             }
           }
-        }
-        for (int i=0; i<mc; i++) {
-          for (int j=0; j<nc; j++) {
-            subC[(i+ic)*N+j+jc+offset] += Cc[i*nc+j];
+          for (int i=0; i<mc; i++) {
+            for (int j=0; j<nc; j++) {
+              subC[(i+ic)*N+j+jc+offset] += Cc[i*nc+j];
+            }
           }
         }
       }
-    }
-  }	  
+    }	  
     
     
     /*
