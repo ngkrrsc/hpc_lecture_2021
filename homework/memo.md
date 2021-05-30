@@ -8,5 +8,5 @@ test:original
 compile 
 > module load gcc
 > module load intel-mpi  
-> mpicxx 00_hello.cpp -fopenmp  
+> mpicxx 00_hello.cpp -O3 -fopenmp  
 > mpirun -np 4 ./a.out
