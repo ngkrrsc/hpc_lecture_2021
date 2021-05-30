@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     auto tic = chrono::steady_clock::now();
     offset = N/size*((rank+irank) % size);
     
-    matmult(subA,subB,subC,N,N/size,offset)
+    matmult(subA,subB,subC,N,N/size,offset);
     
     /*
     for (int i=0; i<N/size; i++)
