@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
   /*プロセス番号取得*/
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  const int N = 256;
+  const int N = 4096;
   /*vector:可変長配列*/
   vector<float> A(N*N);
   vector<float> B(N*N);
@@ -102,11 +102,11 @@ int main(int argc, char** argv) {
 
   /*パラメータ設定*/
   const int m = N/size, n = N, k = N/size;
-  const int kc = 64;
-  const int nc = N/size/4;
-  const int mc = 32;
-  const int nr = 32;
-  const int mr = 16;
+  const int kc = 512;
+  const int nc = 64;
+  const int mc = 256;
+  const int nr = 64;
+  const int mr = 32;
 
   double comp_time = 0, comm_time = 0;
   for(int irank=0; irank<size; irank++) {
