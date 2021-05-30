@@ -7,7 +7,7 @@ example.cpp:オリジナル
 <br>
 1_blocking.cpp:キャッシュブロッキング
 <br>
-2_simd:キャッシュブロッキング+simd
+2_simd:キャッシュブロッキング+simd ←最速
 <br>
 <br>
 compile 
