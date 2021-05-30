@@ -5,6 +5,10 @@
 #include <chrono>
 using namespace std;
 
+#include <cstdlib>
+#include <immintrin.h>
+typedef vector<vector<float>> matrix;
+
 int main(int argc, char** argv) {
   int size, rank;
   MPI_Init(&argc, &argv);
