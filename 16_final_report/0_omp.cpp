@@ -5,30 +5,46 @@
 #include <chrono>
 using namespace std;
 
+void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M, int offset) {
+  const int m = M, n = M, k = N; //M=N/size
+#pragma omp parallel for
+    for (int i=0; i<M; i++)
+      for (int k=0; k<N; k++)
+        for (int j=0; j<M; j++)
+          C[N*i+j+offset] += A[N*i+k] * B[N/size*k+j];
+}
+
 int main(int argc, char** argv) {
   int size, rank;
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  const int N = 256;
+  const int N = 2048;
   vector<float> A(N*N);
   vector<float> B(N*N);
-  vector<float> C(N*N, 0);
+  vector<float> C(N*N,0);
   vector<float> subA(N*N/size);
   vector<float> subB(N*N/size);
   vector<float> subC(N*N/size, 0);
   vector<float> recv(N*N/size);
+
+  int offset = 0;
+  matmult(subA, subB, subC, N, N/size, offset);
+
   for (int i=0; i<N; i++) {
     for (int j=0; j<N; j++) {
       A[N*i+j] = drand48();
       B[N*i+j] = drand48();
     }
   }
-  int offset = N/size*rank;
-  for (int i=0; i<N/size; i++)
-    for (int j=0; j<N; j++)
+  offset = N/size*rank;
+  for (int i=0; i<N/size; i++){
+    for (int j=0; j<N; j++){
       subA[N*i+j] = A[N*(i+offset)+j];
+      subC[N*i+j] = 0;
+    }
+  }
   for (int i=0; i<N; i++)
     for (int j=0; j<N/size; j++)
       subB[N/size*i+j] = B[N*i+j+offset];
@@ -37,13 +53,19 @@ int main(int argc, char** argv) {
 
   double comp_time = 0, comm_time = 0;
   for(int irank=0; irank<size; irank++) {
+	  
     auto tic = chrono::steady_clock::now();
     offset = N/size*((rank+irank) % size);
-#pragma omp parallel for
+    
+    matmult(subA, subB, subC, N, N/size, offset);
+    
+    /*
     for (int i=0; i<N/size; i++)
-      for (int k=0; k<N; k++)
-        for (int j=0; j<N/size; j++)
+      for (int j=0; j<N/size; j++)
+        for (int k=0; k<N; k++)
           subC[N*i+j+offset] += subA[N*i+k] * subB[N/size*k+j];
+    */
+    
     auto toc = chrono::steady_clock::now();
     comp_time += chrono::duration<double>(toc - tic).count();
     MPI_Request request[2];
