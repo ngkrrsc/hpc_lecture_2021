@@ -1,5 +1,7 @@
+/* OpenMP + cash-line + cash-blocking + SIMD */
 #include <mpi.h>
 #include <omp.h>
+#include <immintrin.h>
 #include <cstdio>
 #include <cmath>
 #include <vector>
@@ -15,7 +17,7 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N1, int N
   const int mr = 32;
 #pragma omp parallel for collapse(2)
   for (int pc=0; pc<k; pc+=kc) {
-    for (int jc=0; jc<n; jc+=nc) {
+	for (int jc=0; jc<n; jc+=nc) {
       float Bc[kc*nc];
       for (int p=0; p<kc; p++) {
         for (int j=0; j<nc; j++) {
@@ -23,7 +25,7 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N1, int N
         }
       }
       for (int ic=0; ic<m; ic+=mc) {
-        float Ac[mc*kc], Cc[mc*nc];
+		float Ac[mc*kc],Cc[mc*nc];
         for (int i=0; i<mc; i++) {
           for (int p=0; p<kc; p++) {
             Ac[i*kc+p] = A[N1*(i+ic)+(p+pc)];
@@ -34,17 +36,21 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N1, int N
         }
         for (int jr=0; jr<nc; jr+=nr) {
           for (int ir=0; ir<mc; ir+=mr) {
-            for (int i=ir; i<ir+mr; i++) {       
-              for (int kr=0; kr<kc; kr++) {
-                for (int j=jr; j<jr+nr; j++) { 
-                  Cc[i*nc+j] += Ac[i*kc+kr] * Bc[kr*nc+j];
+			for (int i=ir; i<ir+mr; i++) {
+			  for (int kr=0; kr<kc; kr++) { 
+				__m256 Avec = _mm256_broadcast_ss(&Ac[i*kc+kr]);
+                for (int j=jr; j<jr+nr; j+=8) {
+				  __m256 Bvec = _mm256_load_ps(&Bc[kr*nc+j]);
+                  __m256 Cvec = _mm256_load_ps(&Cc[i*nc+j]);
+                  Cvec = _mm256_fmadd_ps(Avec, Bvec, Cvec);
+                  _mm256_store_ps(&Cc[i*nc+j], Cvec);
                 }
               }
             }
           }
         }
-		for (int i=0; i<mc; i++) { 
-		  for (int j=0; j<nc; j++) {
+		for (int i=0; i<mc; i++) {  
+		  for (int j=0; j<nc; j++) {  
             C[N1*(i+ic)+(j+jc)+offset] += Cc[i*nc+j];
           }
         }
@@ -63,8 +69,8 @@ int main(int argc, char** argv) {
 
   const int N = (argc >= 2) ? atol(argv[1]) : 256;
   if (N < 512) {
-	printf("Too short input. Please more than 2048\n");
-	exit(1);
+    printf("Too short input. Please more than 2048\n");
+    exit(1);
   }
   vector<float> A(N*N);
   vector<float> B(N*N);
@@ -79,9 +85,6 @@ int main(int argc, char** argv) {
       B[N*i+j] = drand48();
     }
   }
-
-  matmult(A, B, C, N, N, 0); 
-
   int offset = N/size*rank;
   for (int i=0; i<N/size; i++)
     for (int j=0; j<N; j++)
