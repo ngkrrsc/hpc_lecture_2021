@@ -1,9 +1,12 @@
 final homework of hpc 2021
 <br>
-test:original
+example.cpp:オリジナル
 <br>
-1_blocking.cpp:add cache blocking
+0_omp.cpp:ループの入れ替え, openmp化, 行列積を関数化
 <br>
+1_blocking.cpp:キャッシュブロッキング
+<br>
+2_simd:キャッシュブロッキング+simd
 <br>
 compile 
 > module load gcc  
