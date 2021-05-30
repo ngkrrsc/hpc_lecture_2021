@@ -85,9 +85,12 @@ int main(int argc, char** argv) {
     }
   }
   offset = N/size*rank;
-  for (int i=0; i<N/size; i++)
-    for (int j=0; j<N; j++)
+  for (int i=0; i<N/size; i++){
+    for (int j=0; j<N; j++){
       subA[N*i+j] = A[N*(i+offset)+j];
+      subC[N*i+j] = 0;
+    }
+  }
   for (int i=0; i<N; i++)
     for (int j=0; j<N/size; j++)
       subB[N/size*i+j] = B[N*i+j+offset];
