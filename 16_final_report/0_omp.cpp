@@ -11,7 +11,7 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M,
     for (int i=0; i<M; i++)
       for (int k=0; k<N; k++)
         for (int j=0; j<M; j++)
-          C[N*i+j+offset] += A[N*i+k] * B[N/size*k+j];
+          C[N*i+j+offset] += A[N*i+k] * B[M*k+j];
 }
 
 int main(int argc, char** argv) {
