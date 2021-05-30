@@ -41,10 +41,10 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M,
               for (int i=ir; i<ir+mr; i++) {
 		__m256 Avec = _mm256_broadcast_ss(Ac+i*kc+kr);
                 for (int j=jr; j<jr+nr; j+=8) {
-                  __m256 Bvec = _mm256_load_ps(&Bc[kr*nc+j]);
-                  __m256 Cvec = _mm256_load_ps(&Cc[i*nc+j]);
+                  __m256 Bvec = _mm256_load_ps(Bc+kr*nc+j);
+                  __m256 Cvec = _mm256_load_ps(Cc+i*nc+j);
                   Cvec = _mm256_fmadd_ps(Avec, Bvec, Cvec);
-                  _mm256_store_ps(&Cc[i*nc+j], Cvec);
+                  _mm256_store_ps(Cc+i*nc+j, Cvec);
                 }
               }
             }
