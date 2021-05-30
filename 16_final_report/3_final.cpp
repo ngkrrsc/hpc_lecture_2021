@@ -9,7 +9,7 @@ using namespace std;
 #include <immintrin.h>
 typedef vector<vector<float>> matrix;
 
-void matmult(matrix &A, matrix &B, matrix &C, int N, int M, int offset) {
+void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M, int offset) {
   const int m = M, n = M, k = N; //M=N/size
   const int kc = 512;
   const int nc = 64;
