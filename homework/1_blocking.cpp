@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
       float Bc[kc*nc];
       for (int p=0; p<kc; p++) {
         for (int j=0; j<nc; j++) {
-          Bc[p*nc+j] = subB[(p+pc)*N+j+jc];
+          Bc[p*nc+j] = subB[(p+pc)*N/size+j+jc];
         }
       }
       for (int ic=0; ic<m; ic+=mc) {
