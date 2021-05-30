@@ -9,8 +9,8 @@ using namespace std;
 #include <immintrin.h>
 typedef vector<vector<float>> matrix;
 
-void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M, int offset) {
-  const int m = M, n = M, k = N; //N:N, M:N/size
+void matmult(matrix &A, matrix &B, matrix &C, int N, int M, int offset) {
+  const int m = M, n = M, k = N; //M=N/size
   const int kc = 512;
   const int nc = 64;
   const int mc = 256;
@@ -26,7 +26,7 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M,
         }
       }
       for (int ic=0; ic<m; ic+=mc) {
-        float Ac[mc*kc], Cc[mc*nc];
+	float Ac[mc*kc],Cc[mc*nc];
         for (int i=0; i<mc; i++) {
           for (int p=0; p<kc; p++) {
             Ac[i*kc+p] = A[N*(i+ic)+p+pc];
@@ -37,23 +37,22 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M,
         }
         for (int jr=0; jr<nc; jr+=nr) {
           for (int ir=0; ir<mc; ir+=mr) {
-            for (int i=ir; i<ir+mr; i++) {       
-              for (int kr=0; kr<kc; kr++) {
-                for (int i=ir; i<ir+mr; i++) {
-                  __m256 Avec = _mm256_broadcast_ss(&Ac[i*kc+kr]);
-                  for (int j=jr; j<jr+nr; j+=8) {
-                    __m256 Bvec = _mm256_load_ps(&Bc[kr*nc+j]);
-                    __m256 Cvec = _mm256_load_ps(&Cc[i*nc+j]);
-                    Cvec = _mm256_fmadd_ps(Avec, Bvec, Cvec);
-                    _mm256_store_ps(&Cc[i*nc+j], Cvec);
+            for (int kr=0; kr<kc; kr++) {
+              for (int i=ir; i<ir+mr; i++) {
+		__m256 Avec = _mm256_broadcast_ss(Ac+i*kc+kr);
+                for (int j=jr; j<jr+nr; j+=8) {
+                  __m256 Bvec = _mm256_load_ps(Bc+kr*nc+j);
+                  __m256 Cvec = _mm256_load_ps(Cc+i*nc+j);
+                  Cvec = _mm256_fmadd_ps(Avec, Bvec, Cvec);
+                  _mm256_store_ps(Cc+i*nc+j, Cvec);
                 }
               }
             }
           }
         }
-        for (int i=0; i<mc; i++) { 
+        for (int i=0; i<mc; i++) {
           for (int j=0; j<nc; j++) {
-            C[N1*(i+ic)+j+jc+offset] += Cc[i*nc+j];
+            C[N*(i+ic)+j+jc] += Cc[i*nc+j];
           }
         }
       }
@@ -77,7 +76,7 @@ int main(int argc, char** argv) {
   vector<float> recv(N*N/size);
 
   int offset = 0;
-　matmult(subA,subB,subC,N,N/size,offset);
+  matmult(subA,subB,subC,N,N/size,offset);
 
   for (int i=0; i<N; i++) {
     for (int j=0; j<N; j++) {
