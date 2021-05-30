@@ -57,8 +57,8 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M,
 }
 */
 
-void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N1, int N2, int offset) {
-  const int m = N2, n = N2, k = N1;
+void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M, int offset) {
+  const int m = M, n = M, k = N; //M=N/size
   const int kc = 512;
   const int nc = 64;
   const int mc = 256;
@@ -70,14 +70,14 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N1, int N
       float Bc[kc*nc];
       for (int p=0; p<kc; p++) {
         for (int j=0; j<nc; j++) {
-          Bc[p*nc+j] = B[N2*(p+pc)+(j+jc)];
+          Bc[p*nc+j] = B[M*(p+pc)+j+jc];
         }
       }
       for (int ic=0; ic<m; ic+=mc) {
         float Ac[mc*kc], Cc[mc*nc];
         for (int i=0; i<mc; i++) {
           for (int p=0; p<kc; p++) {
-            Ac[i*kc+p] = A[N1*(i+ic)+(p+pc)];
+            Ac[i*kc+p] = A[N*(i+ic)+p+pc];
           }
           for (int j=0; j<nc; j++) {
             Cc[i*nc+j] = 0;
@@ -96,7 +96,7 @@ void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N1, int N
         }
 		for (int i=0; i<mc; i++) { 
 		  for (int j=0; j<nc; j++) {
-            C[N1*(i+ic)+(j+jc)+offset] += Cc[i*nc+j];
+            C[N1*(i+ic)+j+jc+offset] += Cc[i*nc+j];
           }
         }
       }
