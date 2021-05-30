@@ -9,6 +9,58 @@ using namespace std;
 #include <immintrin.h>
 typedef vector<vector<float>> matrix;
 
+void matmult(vector<float> &A, vector<float> &B, vector<float> &C, int N, int M, int offset) {
+  const int m = M, n = M, k = N; //N:N, M:N/size
+  const int kc = 512;
+  const int nc = 64;
+  const int mc = 256;
+  const int nr = 64;
+  const int mr = 32;
+#pragma omp parallel for collapse(2)
+  for (int jc=0; jc<n; jc+=nc) {
+    for (int pc=0; pc<k; pc+=kc) {
+      float Bc[kc*nc];
+      for (int p=0; p<kc; p++) {
+        for (int j=0; j<nc; j++) {
+          Bc[p*nc+j] = B[M*(p+pc)+j+jc];
+        }
+      }
+      for (int ic=0; ic<m; ic+=mc) {
+        float Ac[mc*kc], Cc[mc*nc];
+        for (int i=0; i<mc; i++) {
+          for (int p=0; p<kc; p++) {
+            Ac[i*kc+p] = A[N*(i+ic)+p+pc];
+          }
+          for (int j=0; j<nc; j++) {
+            Cc[i*nc+j] = 0;
+          }
+        }
+        for (int jr=0; jr<nc; jr+=nr) {
+          for (int ir=0; ir<mc; ir+=mr) {
+            for (int i=ir; i<ir+mr; i++) {       
+              for (int kr=0; kr<kc; kr++) {
+                for (int i=ir; i<ir+mr; i++) {
+                  __m256 Avec = _mm256_broadcast_ss(&Ac[i*kc+kr]);
+                  for (int j=jr; j<jr+nr; j+=8) {
+                    __m256 Bvec = _mm256_load_ps(&Bc[kr*nc+j]);
+                    __m256 Cvec = _mm256_load_ps(&Cc[i*nc+j]);
+                    Cvec = _mm256_fmadd_ps(Avec, Bvec, Cvec);
+                    _mm256_store_ps(&Cc[i*nc+j], Cvec);
+                }
+              }
+            }
+          }
+        }
+        for (int i=0; i<mc; i++) { 
+          for (int j=0; j<nc; j++) {
+            C[N1*(i+ic)+j+jc+offset] += Cc[i*nc+j];
+          }
+        }
+      }
+    }
+  }
+}
+
 int main(int argc, char** argv) {
   int size, rank;
   MPI_Init(&argc, &argv);
@@ -23,13 +75,17 @@ int main(int argc, char** argv) {
   vector<float> subB(N*N/size);
   vector<float> subC(N*N/size, 0);
   vector<float> recv(N*N/size);
+
+  int offset = 0;
+　matmult(subA,subB,subC,N,N/size,offset);
+
   for (int i=0; i<N; i++) {
     for (int j=0; j<N; j++) {
       A[N*i+j] = drand48();
       B[N*i+j] = drand48();
     }
   }
-  int offset = N/size*rank;
+  offset = N/size*rank;
   for (int i=0; i<N/size; i++)
     for (int j=0; j<N; j++)
       subA[N*i+j] = A[N*(i+offset)+j];
@@ -38,14 +94,6 @@ int main(int argc, char** argv) {
       subB[N/size*i+j] = B[N*i+j+offset];
   int recv_from = (rank + 1) % size;
   int send_to = (rank - 1 + size) % size;
-	
-/*パラメータ設定*/
-  const int m = N/size, n = N, k = N/size;
-  const int kc = 256;
-  const int nc = 32;
-  const int mc = 128;
-  const int nr = 32;
-  const int mr = 16;
 
   double comp_time = 0, comm_time = 0;
   for(int irank=0; irank<size; irank++) {
@@ -53,48 +101,7 @@ int main(int argc, char** argv) {
     auto tic = chrono::steady_clock::now();
     offset = N/size*((rank+irank) % size);
     
-#pragma omp parallel for collapse(2)
-    for (int jc=0; jc<n; jc+=nc) {
-      for (int pc=0; pc<k; pc+=kc) {
-        float Bc[kc*nc];
-        for (int p=0; p<kc; p++) {
-          for (int j=0; j<nc; j++) {
-            Bc[p*nc+j] = B[(N/size)*(p+pc)+j+jc];
-          }
-        }
-        for (int ic=0; ic<m; ic+=mc) {
-	        float Ac[mc*kc],Cc[mc*nc];
-          for (int i=0; i<mc; i++) {
-            for (int p=0; p<kc; p++) {
-              Ac[i*kc+p] = A[N*(i+ic)+p+pc];
-            }
-            for (int j=0; j<nc; j++) {
-              Cc[i*nc+j] = 0;
-            }
-          }
-          for (int jr=0; jr<nc; jr+=nr) {
-            for (int ir=0; ir<mc; ir+=mr) {
-              for (int kr=0; kr<kc; kr++) {
-                for (int i=ir; i<ir+mr; i++) {
-		  __m256 Avec = _mm256_broadcast_ss(Ac+i*kc+kr);
-                  for (int j=jr; j<jr+nr; j+=8) {
-                    __m256 Bvec = _mm256_load_ps(Bc+kr*nc+j);
-                    __m256 Cvec = _mm256_load_ps(Cc+i*nc+j);
-                    Cvec = _mm256_fmadd_ps(Avec, Bvec, Cvec);
-                    _mm256_store_ps(Cc+i*nc+j, Cvec);
-                  }
-                }
-              }
-            }
-          }
-          for (int i=0; i<mc; i++) {
-            for (int j=0; j<nc; j++) {
-              subC[(i+ic)*N+j+jc+offset] += Cc[i*nc+j];
-            }
-          }
-        }
-      }
-    }
+    matmult(subA,subB,subC,N,N/size,offset)
     
     /*
     for (int i=0; i<N/size; i++)
